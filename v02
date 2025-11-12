@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Grid Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        h1 { color: #333; }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(10, 25px);
+            grid-template-rows: repeat(10, 25px);
+            gap: 2px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 25px;
+            height: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: red;
+            background-color: white;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        .disabled {
+            cursor: default;
+            color: gray;
+        }
+        #controls {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* Message styling */
+        #message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .win {
+            color: green;
+        }
+        .bust {
+            color: crimson;
+        }
+    </style>
+</head>
+<body>
+    <h1>Number Grid Game</h1>
+    
+    <div id="grid"></div>
+    
+    <div id="controls">
+        <button onclick="restartGame()">Restart</button>
+        <button onclick="showInfo()">Info</button>
+    </div>
+
+    <div id="message"></div>
+
+    <script>
+        const gridSize = 10;
+        const maxNumber = 100;
+        let currentNumber = 1;
+        let grid = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
+        const gridElement = document.getElementById("grid");
+        const messageElement = document.getElementById("message");
+
+        function createGrid() {
+            gridElement.innerHTML = '';
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    let cell = document.createElement("div");
+                    cell.className = "cell disabled";
+                    cell.addEventListener("click", () => placeNumber(row, col));
+                    gridElement.appendChild(cell);
+                }
+            }
+            updateGrid();
+            messageElement.textContent = '';
+        }
+
+        function restartGame() {
+            currentNumber = 1;
+            grid = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
+            updateGrid();
+            messageElement.textContent = '';
+            messageElement.className = '';
+        }
+
+        function showInfo() {
+            alert("1. Start by placing the number 1 in one of the four corners.\n"
+                + "2. Place numbers sequentially (1, 2, 3...) up to 100.\n"
+                + "3. Each number can only be placed:\n"
+                + "   - 3 spaces away horizontally or vertically,\n"
+                + "   - or 2 spaces away diagonally.\n"
+                + "4. Reach 100 to win, or try again if you get stuck!");
+        }
+
+        function placeNumber(row, col) {
+            if (grid[row][col] === null && isValidMove(row, col)) {
+                grid[row][col] = currentNumber;
+                currentNumber++;
+                updateGrid();
+
+                // WIN condition
+                if (currentNumber > maxNumber) {
+                    showMessage("🎉 Congratulations! You reached 100!", "win");
+                    disableBoard();
+                    return;
+                }
+
+                // BUST condition
+                if (!hasValidMoves()) {
+                    showMessage("💥 Busted! No more moves left.", "bust");
+                    disableBoard();
+                    return;
+                }
+            }
+        }
+
+        function showMessage(text, type) {
+            messageElement.textContent = text;
+            messageElement.className = type === "win" ? "win" : "bust";
+        }
+
+        function disableBoard() {
+            Array.from(gridElement.children).forEach(cell => {
+                cell.classList.add("disabled");
+            });
+        }
+
+        function isValidMove(row, col) {
+            if (currentNumber === 1) {
+                return (row === 0 && col === 0) || (row === 0 && col === 9) ||
+                       (row === 9 && col === 0) || (row === 9 && col === 9);
+            }
+
+            const directions = [
+                [3, 0], [-3, 0], [0, 3], [0, -3],
+                [2, 2], [2, -2], [-2, 2], [-2, -2]
+            ];
+            return directions.some(([dr, dc]) => {
+                const nr = row + dr, nc = col + dc;
+                return nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize && grid[nr][nc] === currentNumber - 1;
+            });
+        }
+
+        function hasValidMoves() {
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    if (grid[row][col] === null && isValidMove(row, col)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function updateGrid() {
+            Array.from(gridElement.children).forEach((cell, index) => {
+                const row = Math.floor(index / gridSize);
+                const col = index % gridSize;
+                cell.textContent = grid[row][col] !== null ? grid[row][col] : '';
+                cell.className = "cell" + (grid[row][col] === null && isValidMove(row, col) ? "" : " disabled");
+            });
+        }
+
+        createGrid();
+    </script>
+</body>
+</html>
