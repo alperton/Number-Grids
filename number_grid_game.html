@@ -5,18 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Number Grid Game</title>
     <style>
-        /* Basic styling */
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
             font-family: Arial, sans-serif;
         }
-        h1 {
-            color: #333;
-        }
+        h1 { color: #333; }
 
-        /* Game grid styling */
         #grid {
             display: grid;
             grid-template-columns: repeat(10, 25px);
@@ -37,14 +33,10 @@
             border: 1px solid #ddd;
             cursor: pointer;
         }
-
-        /* Disable cursor on inactive cells */
         .disabled {
             cursor: default;
             color: gray;
         }
-
-        /* Control buttons styling */
         #controls {
             display: flex;
             gap: 10px;
@@ -53,6 +45,19 @@
             padding: 5px 10px;
             font-size: 14px;
             cursor: pointer;
+        }
+
+        /* Message styling */
+        #message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .win {
+            color: green;
+        }
+        .bust {
+            color: crimson;
         }
     </style>
 </head>
@@ -66,16 +71,18 @@
         <button onclick="showInfo()">Info</button>
     </div>
 
+    <div id="message"></div>
+
     <script>
         const gridSize = 10;
         const maxNumber = 100;
         let currentNumber = 1;
         let grid = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
-        let gridElement = document.getElementById("grid");
+        const gridElement = document.getElementById("grid");
+        const messageElement = document.getElementById("message");
 
-        // Create the game grid
         function createGrid() {
-            gridElement.innerHTML = ''; // Clear any existing cells
+            gridElement.innerHTML = '';
             for (let row = 0; row < gridSize; row++) {
                 for (let col = 0; col < gridSize; col++) {
                     let cell = document.createElement("div");
@@ -85,16 +92,17 @@
                 }
             }
             updateGrid();
+            messageElement.textContent = '';
         }
 
-        // Start or restart the game
         function restartGame() {
             currentNumber = 1;
             grid = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
             updateGrid();
+            messageElement.textContent = '';
+            messageElement.className = '';
         }
 
-        // Show game instructions
         function showInfo() {
             alert("1. Start by placing the number 1 in one of the four corners.\n"
                 + "2. Place numbers sequentially (1, 2, 3...) up to 100.\n"
@@ -104,44 +112,55 @@
                 + "4. Reach 100 to win, or try again if you get stuck!");
         }
 
-        // Place the current number in a cell
         function placeNumber(row, col) {
             if (grid[row][col] === null && isValidMove(row, col)) {
                 grid[row][col] = currentNumber;
                 currentNumber++;
                 updateGrid();
 
-                // Check if game is won or stuck
+                // WIN condition
                 if (currentNumber > maxNumber) {
-                    alert("Congratulations! You've reached 100!");
-                    restartGame();
-                } else if (!hasValidMoves() && currentNumber > 90 && currentNumber <= 99) {
-                    alert("Better luck next time!");
-                    restartGame();
+                    showMessage("🎉 Congratulations! You reached 100!", "win");
+                    disableBoard();
+                    return;
+                }
+
+                // BUST condition
+                if (!hasValidMoves()) {
+                    showMessage("💥 Busted! No more moves left.", "bust");
+                    disableBoard();
+                    return;
                 }
             }
         }
 
-        // Validate if a move is allowed
+        function showMessage(text, type) {
+            messageElement.textContent = text;
+            messageElement.className = type === "win" ? "win" : "bust";
+        }
+
+        function disableBoard() {
+            Array.from(gridElement.children).forEach(cell => {
+                cell.classList.add("disabled");
+            });
+        }
+
         function isValidMove(row, col) {
             if (currentNumber === 1) {
-                // Allow only the four corners for the first number
                 return (row === 0 && col === 0) || (row === 0 && col === 9) ||
                        (row === 9 && col === 0) || (row === 9 && col === 9);
             }
 
-            // Check 3-space vertical/horizontal or 2-space diagonal from the last number
             const directions = [
                 [3, 0], [-3, 0], [0, 3], [0, -3],
                 [2, 2], [2, -2], [-2, 2], [-2, -2]
             ];
             return directions.some(([dr, dc]) => {
-                let nr = row + dr, nc = col + dc;
+                const nr = row + dr, nc = col + dc;
                 return nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize && grid[nr][nc] === currentNumber - 1;
             });
         }
 
-        // Check if there are valid moves left
         function hasValidMoves() {
             for (let row = 0; row < gridSize; row++) {
                 for (let col = 0; col < gridSize; col++) {
@@ -153,17 +172,15 @@
             return false;
         }
 
-        // Update the display for each cell
         function updateGrid() {
             Array.from(gridElement.children).forEach((cell, index) => {
-                let row = Math.floor(index / gridSize);
-                let col = index % gridSize;
+                const row = Math.floor(index / gridSize);
+                const col = index % gridSize;
                 cell.textContent = grid[row][col] !== null ? grid[row][col] : '';
                 cell.className = "cell" + (grid[row][col] === null && isValidMove(row, col) ? "" : " disabled");
             });
         }
 
-        // Initialize the game
         createGrid();
     </script>
 </body>
